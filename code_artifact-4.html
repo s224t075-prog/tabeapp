@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>サクッと！放課後グルメ</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti for Celebration -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"M PLUS Rounded 1c"', 'sans-serif'],
+                    },
+                    colors: {
+                        theme: {
+                            green: '#10b981',
+                            lime: '#84cc16',
+                            yellow: '#facc15',
+                            darkGreen: '#065f46',
+                            bg: '#f7fee7',
+                            card: '#ffffff'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            background: linear-gradient(135deg, #ecfdf5 0%, #f7fee7 50%, #fefce8 100%);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Hide Scrollbar */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Timer pulse animation when under 30 seconds */
+        @keyframes timerEmergency {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.08); opacity: 0.85; }
+        }
+        .timer-warning {
+            animation: timerEmergency 0.8s infinite ease-in-out;
+            color: #ef4444 !important;
+            border-color: #ef4444 !important;
+        }
+
+        /* Interactive voting active states */
+        .vote-btn-active-first {
+            background: linear-gradient(135deg, #eab308, #ca8a04) !important;
+            color: #ffffff !important;
+            border-color: #eab308 !important;
+            box-shadow: 0 4px 14px rgba(234, 179, 8, 0.45);
+        }
+        .vote-btn-active-ok {
+            background: linear-gradient(135deg, #84cc16, #65a30d) !important;
+            color: #ffffff !important;
+            border-color: #84cc16 !important;
+            box-shadow: 0 4px 14px rgba(132, 204, 22, 0.45);
+        }
+        .vote-btn-active-ng {
+            background: linear-gradient(135deg, #f43f5e, #e11d48) !important;
+            color: #ffffff !important;
+            border-color: #f43f5e !important;
+            box-shadow: 0 4px 14px rgba(244, 63, 94, 0.45);
+        }
+
+        /* Glassmorphism overlays */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-0 sm:p-4">
+
+    <!-- Mobile Frame Wrapper (iPhone 15 Pro Aesthetic Removed for Pure Full-Screen UI) -->
+    <div class="w-full max-w-md h-[100vh] sm:h-[860px] bg-white sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col relative">
+
+        <!-- App Main Scrollable Screen Area -->
+        <div class="flex-1 overflow-y-auto no-scrollbar relative flex flex-col bg-slate-50/50">
+
+            <!-- STEP 1: LOBBY & ROOM CREATION -->
+            <section id="step1Screen" class="p-5 flex-1 flex flex-col justify-between bg-gradient-to-b from-lime-50/60 via-emerald-50/40 to-lime-50/20">
+                <div>
+                    <!-- Citrus Green App Header Banner -->
+                    <div class="text-center mt-3 mb-6">
+                        <div class="inline-flex items-center space-x-1.5 bg-gradient-to-r from-lime-600 via-emerald-500 to-amber-500 text-white text-[11px] font-black px-3.5 py-1 rounded-full shadow-md">
+                            <i class="fa-solid fa-utensils text-sm"></i>
+                            <span>放課後グルメ決定アプリ</span>
+                        </div>
+                        <h1 class="text-2xl font-black text-gray-900 mt-2.5 tracking-tight">サクッと！放課後グルメ</h1>
+                        <p class="text-xs text-gray-500 font-bold mt-1">大きな写真で直感選択！3分多数決で即決定</p>
+                    </div>
+
+                    <!-- Room Configuration Card -->
+                    <div class="bg-white rounded-3xl p-5 shadow-sm border border-lime-100 space-y-4">
+                        <div class="flex items-center justify-between border-b border-lime-100 pb-3">
+                            <div>
+                                <div class="text-[10px] font-black text-gray-400 uppercase tracking-wider">ROOM CODE</div>
+                                <div id="roomCodeDisplay" class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-lime-600 to-emerald-600 tracking-widest">
+                                    #ROOM-7782
+                                </div>
+                            </div>
+                            <button id="copyCodeBtn" class="bg-lime-50 text-lime-700 hover:bg-lime-100 font-black text-xs px-3.5 py-2 rounded-2xl transition flex items-center space-x-1.5 active:scale-95 border border-lime-200">
+                                <i class="fa-solid fa-copy"></i>
+                                <span>コードコピー</span>
+                            </button>
+                        </div>
+
+                        <!-- Settings Inputs -->
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-black text-gray-700 mb-1">
+                                    <i class="fa-solid fa-user text-lime-600 mr-1"></i>あなたのお名前
+                                </label>
+                                <input type="text" id="userNameInput" value="あなた" class="w-full bg-lime-50/40 border border-lime-200 rounded-2xl py-2.5 px-3.5 text-xs font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-lime-500">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-xs font-black text-gray-700 mb-1">
+                                        <i class="fa-solid fa-wallet text-emerald-600 mr-1"></i>一人当たり予算
+                                    </label>
+                                    <select id="budgetSelect" class="w-full bg-lime-50/40 border border-lime-200 rounded-2xl py-2.5 px-2 text-xs font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-lime-500">
+                                        <option value="1000">1,000円以内</option>
+                                        <option value="1500">1,500円以内</option>
+                                        <option value="2000" selected>2,000円以内</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-black text-gray-700 mb-1">
+                                        <i class="fa-solid fa-person-walking text-amber-500 mr-1"></i>徒歩何分まで
+                                    </label>
+                                    <select id="distanceSelect" class="w-full bg-lime-50/40 border border-lime-200 rounded-2xl py-2.5 px-2 text-xs font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-lime-500">
+                                        <option value="3">徒歩 3分以内</option>
+                                        <option value="5" selected>徒歩 5分以内</option>
+                                        <option value="10">徒歩 10分以内</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Member Avatar Lobby -->
+                    <div class="mt-5 space-y-2">
+                        <div class="flex justify-between items-center px-1">
+                            <span class="text-xs font-black text-gray-800">参加中の友達 (<span id="memberCount">4</span>名)</span>
+                            <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                <i class="fa-solid fa-circle text-[8px] animate-ping mr-1"></i>全員オンライン
+                            </span>
+                        </div>
+
+                        <!-- Story Bubble Style Members -->
+                        <div class="bg-white rounded-3xl p-3 border border-lime-100 flex justify-around items-center">
+                            <div class="flex flex-col items-center space-y-1">
+                                <div class="w-12 h-12 rounded-full p-[2px] bg-gradient-to-tr from-amber-400 via-lime-500 to-emerald-600">
+                                    <div class="w-full h-full bg-white rounded-full p-[2px]">
+                                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" class="w-full h-full rounded-full object-cover">
+                                    </div>
+                                </div>
+                                <span class="text-[10px] font-black text-gray-800">あなた</span>
+                            </div>
+
+                            <div class="flex flex-col items-center space-y-1">
+                                <div class="w-12 h-12 rounded-full p-[2px] bg-gradient-to-tr from-amber-400 via-lime-500 to-emerald-600">
+                                    <div class="w-full h-full bg-white rounded-full p-[2px]">
+                                        <img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&auto=format&fit=crop&q=80" class="w-full h-full rounded-full object-cover">
+                                    </div>
+                                </div>
+                                <span class="text-[10px] font-black text-gray-800">たろう</span>
+                            </div>
+
+                            <div class="flex flex-col items-center space-y-1">
+                                <div class="w-12 h-12 rounded-full p-[2px] bg-gradient-to-tr from-amber-400 via-lime-500 to-emerald-600">
+                                    <div class="w-full h-full bg-white rounded-full p-[2px]">
+                                        <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=80" class="w-full h-full rounded-full object-cover">
+                                    </div>
+                                </div>
+                                <span class="text-[10px] font-black text-gray-800">はなこ</span>
+                            </div>
+
+                            <div class="flex flex-col items-center space-y-1">
+                                <div class="w-12 h-12 rounded-full p-[2px] bg-gradient-to-tr from-amber-400 via-lime-500 to-emerald-600">
+                                    <div class="w-full h-full bg-white rounded-full p-[2px]">
+                                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80" class="w-full h-full rounded-full object-cover">
+                                    </div>
+                                </div>
+                                <span class="text-[10px] font-black text-gray-800">ケン</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Start Voting Button -->
+                <div class="mt-6 mb-2">
+                    <button id="startVotingBtn" class="w-full bg-gradient-to-r from-lime-600 via-emerald-600 to-amber-500 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition text-base flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-play text-sm"></i>
+                        <span>みんな揃った！3分多数決スタート</span>
+                    </button>
+                    <p class="text-[10px] text-center text-gray-400 font-bold mt-2">全員のスマホで写真フィードが一斉にロードされます</p>
+                </div>
+            </section>
+
+            <!-- STEP 2: INSTAGRAM-FEED STYLE VOTING SCREEN -->
+            <section id="step2Screen" class="flex-1 flex flex-col hidden bg-gradient-to-b from-lime-50/30 to-emerald-50/20 relative overflow-hidden">
+                <!-- Sticky Top Header with 3-Minute Timer -->
+                <div class="bg-white/95 backdrop-blur-md px-4 py-3 border-b border-lime-100 sticky top-0 z-30 shadow-sm space-y-2.5 shrink-0">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <!-- Circular Timer Progress -->
+                            <div class="relative w-9 h-9 flex items-center justify-center">
+                                <svg class="w-full h-full transform -rotate-90">
+                                    <circle cx="18" cy="18" r="14" stroke="#f3f4f6" stroke-width="3" fill="transparent"/>
+                                    <circle id="timerCircle" cx="18" cy="18" r="14" stroke="#84cc16" stroke-width="3" fill="transparent" stroke-dasharray="88" stroke-dashoffset="0" stroke-linecap="round" class="transition-all duration-1000"/>
+                                </svg>
+                                <i class="fa-solid fa-stopwatch absolute text-lime-600 text-[10px]"></i>
+                            </div>
+                            <div>
+                                <div class="text-[9px] font-black text-gray-400 uppercase tracking-widest">制限時間</div>
+                                <div id="timerDisplay" class="text-lg font-black text-gray-900 font-mono leading-none">03:00</div>
+                            </div>
+                        </div>
+
+                        <!-- Live Voter Status Counter -->
+                        <div class="bg-lime-50 border border-lime-200 px-3 py-1 rounded-2xl text-right">
+                            <div class="text-[9px] font-black text-lime-700 uppercase">メンバー投票完了度</div>
+                            <div id="voteStatusText" class="text-xs font-black text-gray-800">1 / 4 人完了</div>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                        <div id="voteProgressBar" class="bg-gradient-to-r from-lime-500 to-amber-500 h-full w-1/4 transition-all duration-500"></div>
+                    </div>
+                </div>
+
+                <!-- Feed Voting Area (Scrollable Area) -->
+                <div id="instaFeedContainer" class="p-3 space-y-6 pb-24 overflow-y-auto flex-1">
+                    <!-- Cards are dynamically rendered via JS -->
+                </div>
+
+                <!-- Floating Bottom Submit Button (Strictly Fixed inside frame like header) -->
+                <div class="absolute bottom-4 left-0 right-0 px-4 z-40 pointer-events-none">
+                    <button id="submitVoteBtn" class="pointer-events-auto w-full bg-gradient-to-r from-lime-600 via-emerald-600 to-amber-500 hover:from-lime-700 hover:to-emerald-700 text-white font-black py-4 rounded-2xl shadow-xl active:scale-95 transition text-base flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-paper-plane text-sm"></i>
+                        <span>投票を確定して集計する！</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- STEP 3: RESULT / WINNING MATCH ANNOUNCEMENT -->
+            <section id="step3Screen" class="p-4 flex-1 flex flex-col hidden space-y-4 bg-gradient-to-b from-amber-50/30 via-lime-50/30 to-emerald-50/20">
+                <!-- Winner Header -->
+                <div class="text-center space-y-1 mt-1">
+                    <span class="bg-gradient-to-r from-lime-500 via-emerald-600 to-amber-500 text-white text-[11px] font-black px-4 py-1 rounded-full uppercase tracking-wider shadow-md animate-bounce inline-block">
+                        🏆 多数決で決定した本日の放課後メシ
+                    </span>
+                    <h2 class="text-2xl font-black text-gray-900">全員納得のベストマッチ店舗！</h2>
+                </div>
+
+                <!-- Winning Restaurant Spotlight Card -->
+                <div class="bg-white rounded-3xl overflow-hidden border-2 border-lime-400 shadow-xl relative">
+                    <div class="relative w-full h-64">
+                        <img id="winnerImg" class="w-full h-full object-cover" src="" alt="勝者店舗">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20"></div>
+
+                        <!-- Top Crown Badge -->
+                        <div class="absolute top-3 right-3 bg-amber-400 text-gray-900 font-black text-xs px-3 py-1 rounded-full shadow-lg flex items-center space-x-1">
+                            <i class="fa-solid fa-crown text-amber-900"></i>
+                            <span>第1位 (一致度 98%)</span>
+                        </div>
+
+                        <!-- On Image Info -->
+                        <div class="absolute bottom-3 left-3 right-3 text-white">
+                            <span id="winnerGenre" class="bg-white/30 backdrop-blur-md text-white text-[10px] font-black px-2.5 py-0.5 rounded-md">ジャンル</span>
+                            <h3 id="winnerName" class="text-2xl font-black mt-1 drop-shadow">店舗名</h3>
+                        </div>
+                    </div>
+
+                    <div class="p-4 space-y-3">
+                        <!-- Price & Location Key Details -->
+                        <div class="flex items-center justify-between">
+                            <div id="winnerPrice" class="text-lg font-black text-emerald-700">💰 ¥950 〜 ¥1,200</div>
+                            <div id="winnerLoc" class="text-xs font-black text-gray-600">📍 渋谷駅徒歩3分</div>
+                        </div>
+
+                        <div class="flex flex-wrap gap-1.5" id="winnerAtmoTags">
+                            <!-- JS populate -->
+                        </div>
+
+                        <!-- Reason Box -->
+                        <div class="bg-gradient-to-r from-lime-50 to-emerald-50 border border-lime-200 rounded-2xl p-3 space-y-1">
+                            <div class="text-[11px] font-black text-lime-700 flex items-center">
+                                <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> 選ばれた決定打
+                            </div>
+                            <p id="winnerReason" class="text-xs font-bold text-gray-700">全員が「アリ」以上と高評価！予算2,000円以内で徒歩3分の好アクセスです。</p>
+                        </div>
+
+                        <!-- Individual Member Vote Chips -->
+                        <div>
+                            <div class="text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-wider">メンバーの投票結果</div>
+                            <div id="memberVotesBreakdown" class="flex flex-wrap gap-1.5">
+                                <!-- Rendered JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation & Share CTA Buttons -->
+                <div class="space-y-2 pt-1">
+                    <button id="openMapBtn" class="w-full bg-gradient-to-r from-lime-600 via-emerald-600 to-amber-500 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition text-sm flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-map-location-dot text-lg"></i>
+                        <span>Google Mapで今すぐ移動する！</span>
+                    </button>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <button id="shareResultBtn" class="bg-emerald-600 text-white font-black py-3 rounded-2xl shadow transition text-xs flex items-center justify-center space-x-1.5 active:scale-95">
+                            <i class="fa-brands fa-line text-sm"></i>
+                            <span>LINEグループに共有</span>
+                        </button>
+                        <button id="restartBtn" class="bg-gray-200 text-gray-800 hover:bg-gray-300 font-black py-3 rounded-2xl transition text-xs flex items-center justify-center space-x-1.5 active:scale-95">
+                            <i class="fa-solid fa-rotate-right"></i>
+                            <span>もう一度投票する</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+
+    </div>
+
+    <!-- Floating Notification Toast -->
+    <div id="toast" class="fixed top-12 left-1/2 -translate-x-1/2 bg-gray-900/95 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-2xl opacity-0 pointer-events-none transition-all duration-300 z-50 flex items-center space-x-2">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-lime-400"></i>
+        <span id="toastMsg">メッセージ</span>
+    </div>
+
+    <script>
+        // Real-Time Clock Mock (Safe check for removed status bar element)
+        function updateClock() {
+            const timeEl = document.getElementById('currentTime');
+            if (!timeEl) return;
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            timeEl.textContent = `${hours}:${minutes}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // High-Quality Instagram Feed Food Data (Under 2,000 JPY)
+        const mockRestaurants = [
+            {
+                id: 1,
+                name: "学割ガッツリ油そば 爆勝亭",
+                genre: "油そば・ラーメン",
+                atmosphere: ["💪 ガッツリ系", "🎉 ワイワイ賑やか", "🎓 学割あり"],
+                priceTag: "¥850 〜 ¥1,100",
+                priceHighlight: "1,000円でお腹いっぱい！",
+                location: "渋谷駅 ハチ公口 徒歩2分",
+                image: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=800&auto=format&fit=crop&q=80",
+                recommendedDish: "特製大盛り油そば (トッピング全乗せ)",
+                mapUrl: "https://maps.google.com/?q=渋谷+油そば",
+                votes: { first: ["あなた", "たろう"], ok: ["ケン"], ng: [] }
+            },
+            {
+                id: 2,
+                name: "とろ〜りチーズ＆韓国チキン 弘大ナイツ",
+                genre: "韓国料理・バル",
+                atmosphere: ["✨ 映え度抜群", "🧀 チーズ映え", "👥 グループ向け"],
+                priceTag: "¥1,200 〜 ¥1,800",
+                priceHighlight: "UFOチキンセット人気！",
+                location: "渋谷駅 井の頭口 徒歩3分",
+                image: "https://images.unsplash.com/photo-1562967914-608f82629710?w=800&auto=format&fit=crop&q=80",
+                recommendedDish: "ヤンニョムチキン＆ハニーマスタード",
+                mapUrl: "https://maps.google.com/?q=渋谷+韓国チキン",
+                votes: { first: ["はなこ"], ok: ["あなた", "たろう", "ケン"], ng: [] }
+            },
+            {
+                id: 3,
+                name: "昭和レトロナポリタン 喫茶ロマン",
+                genre: "レトロカフェ・洋食",
+                atmosphere: ["☕ 落ち着いた雰囲気", "🍝 懐かしの味", "ソファー席あり"],
+                priceTag: "¥900 〜 ¥1,300",
+                priceHighlight: "クリームソーダとセットで¥1,200",
+                location: "渋谷駅 宮益坂口 徒歩4分",
+                image: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&auto=format&fit=crop&q=80",
+                recommendedDish: "鉄板ナポリタン＆メロンクリームソーダ",
+                mapUrl: "https://maps.google.com/?q=渋谷+レトロカフェ",
+                votes: { first: ["ケン"], ok: ["はなこ"], ng: ["たろう"] }
+            },
+            {
+                id: 4,
+                name: "ジューシーチーズハンバーグ Grill&Kitchen",
+                genre: "ハンバーグ・洋食",
+                atmosphere: ["🔥 肉汁あふれる", "🍚 ご飯おかわり自由", "🎉 定番人気"],
+                priceTag: "¥1,100 〜 ¥1,600",
+                priceHighlight: "ライスカレースープ付き",
+                location: "渋谷駅 新南口 徒歩5分",
+                image: "https://images.unsplash.com/photo-1550547660-d9450f859349?w=800&auto=format&fit=crop&q=80",
+                recommendedDish: "デミグラスチェダーチーズハンバーグ",
+                mapUrl: "https://maps.google.com/?q=渋谷+ハンバーグ",
+                votes: { first: [], ok: ["あなた", "はなこ", "たろう"], ng: ["ケン"] }
+            }
+        ];
+
+        // State Management
+        let myVotes = {}; // { restaurantId: 'first' | 'ok' | 'ng' }
+        let timerInterval = null;
+        let timeLeft = 180; // 3 Minutes
+
+        // DOM Screens
+        const step1Screen = document.getElementById('step1Screen');
+        const step2Screen = document.getElementById('step2Screen');
+        const step3Screen = document.getElementById('step3Screen');
+
+        // Copy Room Code Event
+        document.getElementById('copyCodeBtn').addEventListener('click', () => {
+            const code = document.getElementById('roomCodeDisplay').textContent.trim();
+            if (navigator.clipboard) navigator.clipboard.writeText(code);
+            showToast("ルームコードをコピーしました！");
+        });
+
+        // Step 1 -> Step 2 transition
+        document.getElementById('startVotingBtn').addEventListener('click', () => {
+            const userName = document.getElementById('userNameInput').value.trim() || "あなた";
+            step1Screen.classList.add('hidden');
+            step2Screen.classList.remove('hidden');
+
+            renderInstagramFeed();
+            start3MinuteTimer();
+            showToast(`${userName}さん、3分多数決スタート！`, "fa-bolt");
+            
+            simulateLiveProgress();
+        });
+
+        // 3-Minute Timer Logic
+        function start3MinuteTimer() {
+            clearInterval(timerInterval);
+            timeLeft = 180;
+            updateTimerUI();
+
+            timerInterval = setInterval(() => {
+                if (timeLeft > 0) {
+                    timeLeft--;
+                    updateTimerUI();
+                } else {
+                    clearInterval(timerInterval);
+                    showToast("⏰ 時間切れ！自動集計します", "fa-hourglass-end");
+                    calculateAndShowWinner();
+                }
+            }, 1000);
+        }
+
+        function updateTimerUI() {
+            const m = Math.floor(timeLeft / 60);
+            const s = timeLeft % 60;
+            const displayStr = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            const timerEl = document.getElementById('timerDisplay');
+            timerEl.textContent = displayStr;
+
+            // Timer Ring Progress
+            const circle = document.getElementById('timerCircle');
+            const strokeDashoffset = 88 - (timeLeft / 180) * 88;
+            circle.style.strokeDashoffset = strokeDashoffset;
+
+            if (timeLeft <= 30) {
+                timerEl.classList.add('timer-warning');
+                circle.setAttribute('stroke', '#ef4444');
+            }
+        }
+
+        // Render INSTAGRAM FEED Cards (Photo -> Title directly underneath -> Price -> Location -> Mood -> Vote Buttons)
+        function renderInstagramFeed() {
+            const container = document.getElementById('instaFeedContainer');
+            container.innerHTML = '';
+
+            mockRestaurants.forEach(shop => {
+                const card = document.createElement('article');
+                card.className = "bg-white rounded-3xl border border-gray-200/80 shadow-md overflow-hidden space-y-0";
+
+                // Mood tags HTML
+                const moodTagsHTML = shop.atmosphere.map(tag => 
+                    `<span class="bg-lime-50 text-lime-900 border border-lime-200 text-[10px] font-black px-2.5 py-1 rounded-full">${tag}</span>`
+                ).join(' ');
+
+                card.innerHTML = `
+                    <!-- 1. EXTRA LARGE HIGH-RES PHOTO -->
+                    <div class="relative w-full h-72 bg-gray-100 overflow-hidden">
+                        <img src="${shop.image}" alt="${shop.name}" class="w-full h-full object-cover">
+                        
+                        <!-- Overlay Badge on Image -->
+                        <div class="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white font-black text-[11px] px-3 py-1 rounded-full flex items-center space-x-1">
+                            <i class="fa-solid fa-location-dot text-lime-400"></i>
+                            <span>${shop.location}</span>
+                        </div>
+
+                        <div class="absolute bottom-3 left-3 bg-gradient-to-r from-lime-600 to-emerald-600 text-white font-black text-xs px-3 py-1 rounded-full shadow-lg">
+                            ${shop.priceHighlight}
+                        </div>
+                    </div>
+
+                    <!-- 2. DIRECTLY BELOW PHOTO: SHOP TITLE FIRST, THEN PRICE, LOCATION & MOOD -->
+                    <div class="p-4 space-y-3 bg-white">
+                        
+                        <!-- SHOP TITLE (Placed DIRECTLY underneath image) -->
+                        <div class="border-b border-lime-100 pb-2">
+                            <div class="text-[10px] font-black text-lime-700 uppercase tracking-widest">${shop.genre}</div>
+                            <h3 class="text-xl font-black text-gray-900 leading-tight mt-0.5">${shop.name}</h3>
+                        </div>
+
+                        <!-- PRICE & LOCATION DISPLAY -->
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-lime-700 to-emerald-700">
+                                    💰 ${shop.priceTag}
+                                </span>
+                                <span class="text-xs font-black text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-lg">
+                                    2,000円以内 ◯
+                                </span>
+                            </div>
+
+                            <div class="text-xs font-black text-gray-700 flex items-center space-x-1.5">
+                                <i class="fa-solid fa-person-walking text-amber-500 text-sm"></i>
+                                <span>${shop.location}</span>
+                            </div>
+                        </div>
+
+                        <!-- ATMOSPHERE & MOOD TAGS -->
+                        <div class="flex flex-wrap gap-1.5 pt-1">
+                            ${moodTagsHTML}
+                        </div>
+
+                        <!-- RECOMMENDED MENU DESCRIPTION -->
+                        <p class="text-xs font-bold text-gray-600 bg-lime-50/60 rounded-xl p-2.5 border border-lime-100">
+                            <span class="font-black text-lime-700">オススメ：</span> ${shop.recommendedDish}
+                        </p>
+
+                        <!-- 3. VOTE BUTTONS (3-WAY SELECTION AT BOTTOM) -->
+                        <div class="grid grid-cols-3 gap-2 pt-2 border-t border-gray-100">
+                            <button onclick="castVote(${shop.id}, 'first', this)" class="vote-btn-${shop.id}-first border-2 border-amber-200 bg-amber-50 text-amber-900 font-black text-xs py-2.5 rounded-2xl transition flex flex-col items-center justify-center space-y-0.5 active:scale-95">
+                                <span class="text-sm">⭐</span>
+                                <span>第一希望</span>
+                            </button>
+                            <button onclick="castVote(${shop.id}, 'ok', this)" class="vote-btn-${shop.id}-ok border-2 border-lime-200 bg-lime-50 text-lime-900 font-black text-xs py-2.5 rounded-2xl transition flex flex-col items-center justify-center space-y-0.5 active:scale-95">
+                                <span class="text-sm">👍</span>
+                                <span>アリ</span>
+                            </button>
+                            <button onclick="castVote(${shop.id}, 'ng', this)" class="vote-btn-${shop.id}-ng border-2 border-rose-200 bg-rose-50 text-rose-900 font-black text-xs py-2.5 rounded-2xl transition flex flex-col items-center justify-center space-y-0.5 active:scale-95">
+                                <span class="text-sm">❌</span>
+                                <span>NG</span>
+                            </button>
+                        </div>
+
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Vote Selector Handler
+        window.castVote = function(shopId, type, btnElement) {
+            myVotes[shopId] = type;
+
+            const firstBtn = document.querySelector(`.vote-btn-${shopId}-first`);
+            const okBtn = document.querySelector(`.vote-btn-${shopId}-ok`);
+            const ngBtn = document.querySelector(`.vote-btn-${shopId}-ng`);
+
+            [firstBtn, okBtn, ngBtn].forEach(b => {
+                if (b) b.classList.remove('vote-btn-active-first', 'vote-btn-active-ok', 'vote-btn-active-ng');
+            });
+
+            if (type === 'first') btnElement.classList.add('vote-btn-active-first');
+            if (type === 'ok') btnElement.classList.add('vote-btn-active-ok');
+            if (type === 'ng') btnElement.classList.add('vote-btn-active-ng');
+
+            showToast("投票を受け付けました");
+        };
+
+        // Simulate Friend Voting Progress
+        function simulateLiveProgress() {
+            setTimeout(() => {
+                document.getElementById('voteStatusText').textContent = "2 / 4 人完了";
+                document.getElementById('voteProgressBar').style.width = "50%";
+            }, 3000);
+
+            setTimeout(() => {
+                document.getElementById('voteStatusText').textContent = "3 / 4 人完了";
+                document.getElementById('voteProgressBar').style.width = "75%";
+            }, 6000);
+        }
+
+        // Calculate Majority Winner & Transition to Result
+        document.getElementById('submitVoteBtn').addEventListener('click', () => {
+            if (Object.keys(myVotes).length === 0) {
+                showToast("1つ以上のお店に投票してください", "fa-circle-exclamation");
+                return;
+            }
+
+            document.getElementById('voteStatusText').textContent = "4 / 4 人完了（全員完了！）";
+            document.getElementById('voteProgressBar').style.width = "100%";
+            showToast("集計中...一番希望の多いお店を算出！", "fa-calculator");
+
+            setTimeout(() => {
+                calculateAndShowWinner();
+            }, 1000);
+        });
+
+        function calculateAndShowWinner() {
+            clearInterval(timerInterval);
+
+            // Calculation algorithm: First = +3, OK = +1, NG = -3
+            let bestShop = mockRestaurants[1]; // Default favorite for preview
+            let maxScore = -999;
+
+            mockRestaurants.forEach(shop => {
+                let score = 0;
+                score += shop.votes.first.length * 3;
+                score += shop.votes.ok.length * 1;
+                score += shop.votes.ng.length * -3;
+
+                const userChoice = myVotes[shop.id];
+                if (userChoice === 'first') score += 3;
+                if (userChoice === 'ok') score += 1;
+                if (userChoice === 'ng') score -= 3;
+
+                if (score > maxScore) {
+                    maxScore = score;
+                    bestShop = shop;
+                }
+            });
+
+            // Populate Winner UI
+            document.getElementById('winnerImg').src = bestShop.image;
+            document.getElementById('winnerName').textContent = bestShop.name;
+            document.getElementById('winnerGenre').textContent = bestShop.genre;
+            document.getElementById('winnerPrice').textContent = `💰 ${bestShop.priceTag}`;
+            document.getElementById('winnerLoc').textContent = `📍 ${bestShop.location}`;
+
+            // Populate Winner Mood Badges
+            const atmoContainer = document.getElementById('winnerAtmoTags');
+            atmoContainer.innerHTML = bestShop.atmosphere.map(tag => 
+                `<span class="bg-lime-100 text-lime-800 text-xs font-black px-2.5 py-0.5 rounded-full">${tag}</span>`
+            ).join('');
+
+            document.getElementById('winnerReason').textContent = `全員が「アリ」以上と回答！NGゼロ＆予算${bestShop.priceTag}で満足度No.1店舗です。`;
+
+            // Member breakdown list
+            const userName = document.getElementById('userNameInput').value.trim() || "あなた";
+            const breakdownContainer = document.getElementById('memberVotesBreakdown');
+            breakdownContainer.innerHTML = '';
+
+            const allVoters = [
+                { name: userName, vote: myVotes[bestShop.id] || "ok" },
+                { name: "たろう", vote: "first" },
+                { name: "はなこ", vote: "ok" },
+                { name: "ケン", vote: "ok" }
+            ];
+
+            allVoters.forEach(v => {
+                const badge = document.createElement('span');
+                let badgeStyle = "bg-lime-100 text-lime-800";
+                let textStr = "👍 アリ";
+                if (v.vote === 'first') { badgeStyle = "bg-amber-100 text-amber-800"; textStr = "⭐ 第一希望"; }
+                if (v.vote === 'ng') { badgeStyle = "bg-rose-100 text-rose-800"; textStr = "❌ NG"; }
+
+                badge.className = `${badgeStyle} text-[11px] font-black px-2.5 py-1 rounded-full flex items-center space-x-1`;
+                badge.textContent = `${v.name}: ${textStr}`;
+                breakdownContainer.appendChild(badge);
+            });
+
+            // External Maps Link
+            document.getElementById('openMapBtn').onclick = () => window.open(bestShop.mapUrl, '_blank');
+
+            // Switch Screen & Trigger Confetti Effect
+            step2Screen.classList.add('hidden');
+            step3Screen.classList.remove('hidden');
+
+            confetti({
+                particleCount: 120,
+                spread: 80,
+                origin: { y: 0.6 }
+            });
+        }
+
+        // Restart Handler
+        document.getElementById('restartBtn').addEventListener('click', () => {
+            myVotes = {};
+            step3Screen.classList.add('hidden');
+            step1Screen.classList.remove('hidden');
+            showToast("新しい多数決ルームを開始しました");
+        });
+
+        // Share Mock
+        document.getElementById('shareResultBtn').addEventListener('click', () => {
+            showToast("LINE共有リンクをコピーしました！");
+        });
+
+        // Toast Helper
+        function showToast(message, iconClass = "fa-circle-check") {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMsg.textContent = message;
+            toastIcon.className = `fa-solid ${iconClass} text-lime-400`;
+
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.classList.add('opacity-100');
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'pointer-events-none');
+                toast.classList.remove('opacity-100');
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
